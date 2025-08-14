@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,6 +20,26 @@ type User struct {
 }
 
 var client *mongo.Client
+
+func usersHandler(w http.ResponseWriter, r *http.Request) {
+	collection := client.Database("lesson28").Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if r.Method == http.MethodGet {
+		cursor, err := collection.Find(ctx, bson.M{})
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer cursor.Close(ctx)
+		var users []User
+		if err := cursor.All(ctx, &users); err != nil {
+			fmt.Println(err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(users)
+	}
+}
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
