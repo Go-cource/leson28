@@ -39,6 +39,20 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(users)
 	}
+	if r.Method == http.MethodPost {
+		var user User
+		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+			fmt.Println(err)
+			return
+		}
+		result, err := collection.InsertOne(ctx, user)
+		if err != nil {
+			fmt.Println(err)
+		}
+		user.ID = result.InsertedID.(primitive.ObjectID)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(user)
+	}
 }
 
 func main() {
